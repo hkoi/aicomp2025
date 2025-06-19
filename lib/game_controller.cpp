@@ -8,6 +8,7 @@
 #include <tuple>
 #include <vector>
 
+#include "game_utils.h"
 #include "types.h"
 
 namespace RED {
@@ -32,12 +33,12 @@ std::ostream& GameController::addEvent(int player) {
     return output_data_ << player << "\t" << diff.count() << "\t";
 }
 
-GameController::GameController(int seed, std::string preset, std::unique_ptr<Player> player1,
-                               std::unique_ptr<Player> player2, std::ostream& output_data)
+GameController::GameController(int seed, std::unique_ptr<Player> player1, std::unique_ptr<Player> player2,
+                               std::ostream& output_data)
     : seed_(seed), output_data_(output_data), players_(3), games_(3) {
-    games_[0] = std::shared_ptr<Game>(new Game(preset));
-    games_[1] = std::shared_ptr<Game>(new Game(preset));
-    games_[2] = std::shared_ptr<Game>(new Game(preset));
+    games_[0] = std::shared_ptr<Game>(new Game());
+    games_[1] = std::shared_ptr<Game>(new Game());
+    games_[2] = std::shared_ptr<Game>(new Game());
 
     start_time_ = std::chrono::steady_clock::now();
     addEvent(1) << "Initializing Player 1 (Red)" << std::endl;
@@ -61,7 +62,7 @@ GameOutcome GameController::run() {
 
         addEvent(current_player) << "Computing valid moves" << std::endl;
         std::vector<Move>&& valid_moves =
-            game_util::GetValidMoves(games_[0]->board(), current_player);  // TODO: implement; won't be empty
+            game_util::GetValidMoves(games_[0]->board(), current_player);  // note: won't be empty
         addEvent(current_player) << valid_moves.size() << " valid moves" << std::endl;
 
         Move move = players_[current_player]->move(valid_moves);
@@ -74,7 +75,7 @@ GameOutcome GameController::run() {
         addEvent(current_player) << "Took " << time_used << "s." << std::endl;
         addEvent(current_player) << "Chose piece " << piece.id << " at (" << piece.pos.r << "," << piece.pos.c << ")"
                                  << std::endl;
-        if (!game_util::IsMoveLegal(games_[0]->board(), move)) {  // TODO: implement
+        if (!game_util::IsMoveLegal(games_[0]->board(), move)) {
             std::stringstream message;
             message << "Illegal move made by " << current_player;
             return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0], message.str()};
@@ -82,7 +83,7 @@ GameOutcome GameController::run() {
         for (int i = 0; i < 3; i++) {
             games_[i]->apply_move(move);
         }
-        if (game_util::IsGameOver(games_[0]->board())) {  // TODO: implement
+        if (game_util::IsGameOver(games_[0]->board())) {
             addEvent(current_player) << "Ended the game and made the last move" << std::endl;
             break;
         }

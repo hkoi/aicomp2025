@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WALLGO_GAME_CONTROLLER_H
+#define WALLGO_GAME_CONTROLLER_H
 
 #include <chrono>
 #include <iostream>
@@ -24,9 +25,10 @@ class GameController {
     std::ostream& addEvent(int player);
 
    public:
-    GameController(int seed, std::string preset, std::unique_ptr<Player> p1, std::unique_ptr<Player> p2,
-                   std::ostream& output_data);
+    GameController(int seed, std::unique_ptr<Player> p1, std::unique_ptr<Player> p2, std::ostream& output_data);
     GameOutcome run();
 };
 
 }  // namespace wallgo
+
+#endif  // WALLGO_GAME_CONTROLLER_H
