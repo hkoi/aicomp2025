@@ -201,15 +201,16 @@
           return;
         }
         alert("Game Data: " + gameData);
-        if (gameData.length % 3 != 1) {
-          alert("Game Data length invalid");
-          return;
-        }
         const splitPoint = gameData.indexOf("_");
-        if (splitPoint % 3 != 0) {
-          alert("Split point index incorrect");
+        if (splitPoint % 4 != 0) {
+          alert("Invalid positions format.");
           return;
         }
+        if ((gameData.length - splitPoint - 1) % 3 != 0) {
+          alert("Invalid moves format.");
+          return;
+        }
+
         const decodeDirection = (dir) => {
           if (dir == 0) return null;
           if (dir == 1) return "U";
@@ -255,24 +256,29 @@
         console.log("Moves: ", moves);
 
         // set up the game board
-        const positions = [
-          [
-            [
-              [0, 0],
-              [1, 1],
-              [2, 2],
-              [3, 3],
-            ],
-          ],
-          [
-            [
-              [3, 2],
-              [6, 1],
-              [5, 5],
-              [5, 6],
-            ],
-          ],
-        ];
+        // positions[player][move][pieceId] = [i, j]
+        const positions = [[Array(4).fill([0, 0])], [Array(4).fill([0, 0])]];
+
+        // initial positions of pieces
+        const decodePosition = (data) => {
+          const i = data.charCodeAt(0) - 48; // '0' to '9'
+          const j = data.charCodeAt(1) - 48; // '0' to '9'
+          const owner = data.charCodeAt(2) - 48 - 1; // '1' or '2'
+          const pieceId = data.charCodeAt(3) - 48; // '0' to '3'
+          return {
+            position: [i, j],
+            owner: owner,
+            pieceId: pieceId,
+          };
+        };
+        for (let i = 0; i < splitPoint; i += 4) {
+          const posData = gameData.substr(i, 4);
+          const { position, owner, pieceId } = decodePosition(posData);
+          positions[owner][0][pieceId] = position;
+          console.log(
+            `Player ${owner} Piece ${pieceId} starts at (${position[0]}, ${position[1]})`
+          );
+        }
 
         const playerAndPieceIdToHtmlId = (player, pieceId) => {
           return "piece" + player + "-" + pieceId;
@@ -363,6 +369,7 @@
                 positions[currentPlayer][current][currentPieceId].slice();
               if (currentPieceId == pieceId && currentPlayer == player) {
                 newPosition = move(newPosition[0], newPosition[1], direction1);
+                newPosition = move(newPosition[0], newPosition[1], direction2);
               }
               positions[currentPlayer][current + 1].push(newPosition);
             }
