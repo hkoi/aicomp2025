@@ -1,5 +1,6 @@
 #include "game_controller.h"
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <memory>
@@ -10,14 +11,6 @@
 
 #include "game_utils.h"
 #include "types.h"
-
-namespace RED {
-std::unique_ptr<wallgo::Player> get();
-}
-
-namespace BLUE {
-std::unique_ptr<wallgo::Player> get();
-}
 
 namespace wallgo {
 
@@ -55,6 +48,40 @@ GameController::GameController(int seed, std::unique_ptr<Player> player1, std::u
 }
 
 GameOutcome GameController::run() {
+    // place the pieces, in order RBBRRBBR
+
+    for (int i = 0; i < 8; ++i) {
+        std::vector<Position> valid_positions;
+
+        for (int r = 0; r < 7; ++r) {
+            for (int c = 0; c < 7; ++c) {
+                Position pos{r, c};
+                if (!games_[0]->board()[r][c].piece()) {
+                    valid_positions.push_back(pos);
+                }
+            }
+        }
+
+        Position pos;
+        int current_player = (i == 0 || i == 3 || i == 4 || i == 7) ? 1 : 2;
+        pos = players_[current_player]->place(valid_positions);
+        addEvent(current_player) << "Placed piece at (" << pos.r << "," << pos.c << ")" << std::endl;
+
+        if (std::find(valid_positions.begin(), valid_positions.end(), pos) == valid_positions.end()) {
+            std::stringstream message;
+            message << "Player " << current_player << " placed piece at an invalid position (" << pos.r << "," << pos.c
+                    << ")";
+            return GameOutcome{static_cast<PlayerColor>(3 - current_player), OPPONENT_ILLEGAL_MOVE, games_[0],
+                               message.str()};
+        }
+
+        for (int game = 0; game < 3; ++game) {
+            // id is i/2
+            games_[game]->place_piece(pos, static_cast<PlayerColor>(current_player), i / 2);
+        }
+    }
+
+    // move
     bool game_ended = false;
     int current_player = 1;
     for (; !game_ended; current_player = 3 - current_player) {
@@ -62,20 +89,43 @@ GameOutcome GameController::run() {
 
         addEvent(current_player) << "Computing valid moves" << std::endl;
         std::vector<Move>&& valid_moves =
-            game_util::GetValidMoves(games_[0]->board(), current_player);  // note: won't be empty
+            game_util::GetValidMoves(*games_[0], static_cast<PlayerColor>(current_player));  // note: won't be empty
         addEvent(current_player) << valid_moves.size() << " valid moves" << std::endl;
+
+        // for (int r = 0; r < 7; ++r) {
+        //     for (int c = 0; c < 7; ++c) {
+        //         const Cell& cell = games_[0]->board()[r][c];
+        //         if (!cell.piece()) {
+        //             std::cout << 'x';
+        //         } else {
+        //             std::cout << static_cast<int>(cell.piece()->owner);
+        //         }
+        //     }
+        //     std::cout << std::endl;
+        // }
 
         Move move = players_[current_player]->move(valid_moves);
         if (move.player() != static_cast<PlayerColor>(current_player)) {
             return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0],
                                "Returned move does not have player set"};
         }
-        Piece piece = move.piece();
+        Piece piece = games_[0]->get_piece(move.player(), move.piece_id());
         double time_used = getTimeSinceLastEvent();
         addEvent(current_player) << "Took " << time_used << "s." << std::endl;
         addEvent(current_player) << "Chose piece " << piece.id << " at (" << piece.pos.r << "," << piece.pos.c << ")"
                                  << std::endl;
-        if (!game_util::IsMoveLegal(games_[0]->board(), move)) {
+        addEvent(current_player) << "Number of steps: " << (move.direction1() ? 1 : 0) + (move.direction2() ? 1 : 0)
+                                 << std::endl;
+        if (move.direction1()) {
+            addEvent(current_player) << "Direction 1: " << static_cast<int>(*move.direction1()) << std::endl;
+        }
+        if (move.direction2()) {
+            addEvent(current_player) << "Direction 2: " << static_cast<int>(*move.direction2()) << std::endl;
+        }
+        addEvent(current_player) << "Wall direction: " << static_cast<int>(move.wall_placement_direction())
+                                 << std::endl;
+
+        if (!game_util::IsMoveLegal(*games_[0], move)) {
             std::stringstream message;
             message << "Illegal move made by " << current_player;
             return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0], message.str()};
@@ -83,10 +133,11 @@ GameOutcome GameController::run() {
         for (int i = 0; i < 3; i++) {
             games_[i]->apply_move(move);
         }
-        if (game_util::IsGameOver(games_[0]->board())) {
+        if (game_util::IsGameOver(*games_[0])) {
             addEvent(current_player) << "Ended the game and made the last move" << std::endl;
             break;
         }
+        addEvent(current_player) << "Game state: " << games_[0]->encode() << std::endl;
     }
     auto [territory1, territory2] = games_[0]->total_territory();
     if (territory1 != territory2) {
