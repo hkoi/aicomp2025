@@ -1,18 +1,42 @@
 #include "types.h"
 
+#include <algorithm>
+#include <functional>
+#include <queue>
 #include <sstream>
+
+#include "game_utils.h"
 
 namespace wallgo {
 
+// Position implementation
+
+Position Position::move(std::optional<Direction> d) const {
+    if (!d) return *this;
+    switch (*d) {
+        case Direction::Up:
+            return {r - 1, c};
+        case Direction::Down:
+            return {r + 1, c};
+        case Direction::Left:
+            return {r, c - 1};
+        case Direction::Right:
+            return {r, c + 1};
+    }
+    return *this;  // Default case, should not happen
+}
+
+bool Position::operator==(Position other) const { return r == other.r && c == other.c; }
+
 // Cell implementation
-Cell::Cell(Position pos, std::optional<Piece> piece, std::array<std::optional<WallType>, 4> walls)
+Cell::Cell(Position pos, std::optional<Piece> piece, std::array<WallType, 4> walls)
     : piece_(piece), walls_(walls), pos_(pos) {}
 
 std::optional<Piece> Cell::piece() const { return piece_; }
 
-std::array<std::optional<WallType>, 4> Cell::walls() const { return walls_; }
+std::array<WallType, 4> Cell::walls() const { return walls_; }
 
-std::optional<WallType> Cell::wall(Direction d) const { return walls_[static_cast<int>(d)]; }
+WallType Cell::wall(Direction d) const { return walls_[static_cast<int>(d)]; }
 
 Position Cell::pos() const { return pos_; }
 
@@ -64,7 +88,7 @@ std::string Move::encode() const {
 Game::Game() : board_(), history_() {
     for (int r = 0; r < 7; ++r) {
         for (int c = 0; c < 7; ++c) {
-            board_[r][c] = Cell({r, c}, std::nullopt, std::array<std::optional<WallType>, 4>{});
+            board_[r][c] = Cell({r, c});
         }
     }
 }
@@ -73,27 +97,130 @@ Board Game::board() const { return board_; }
 
 std::vector<Move> Game::history() const { return history_; }
 
+inline std::pair<int, int> territory_helper(const Game &game, std::function<int(int, int)> acc) {
+    std::array<std::array<bool, 7>, 7> visited = {};
+    const auto &board = game.board();
+    int red_territory = 0;
+    int blue_territory = 0;
+
+    for (int r = 0; r < 7; ++r) {
+        for (int c = 0; c < 7; ++c) {
+            if (visited[r][c]) continue;
+
+            Cell cell = board[r][c];
+            if (!cell.piece()) continue;
+
+            std::queue<Position> queue;
+            queue.push(cell.pos());
+            visited[r][c] = true;
+
+            int territory_count = 1;
+            bool single_color = true;
+            PlayerColor color = cell.piece()->owner;
+
+            while (!queue.empty()) {
+                Position pos = queue.front();
+                queue.pop();
+
+                if (board[pos.r][pos.c].piece()) {
+                    if (board[pos.r][pos.c].piece()->owner != color) {
+                        single_color = false;
+                    }
+                }
+
+                for (Cell neighbor : game.get_accessible_neighbors(pos)) {
+                    if (!visited[neighbor.pos().r][neighbor.pos().c]) {
+                        visited[neighbor.pos().r][neighbor.pos().c] = true;
+                        queue.push(neighbor.pos());
+                        territory_count++;
+                    }
+                }
+            }
+
+            if (!single_color) continue;
+
+            if (color == PlayerColor::Red) {
+                red_territory = acc(red_territory, territory_count);
+            } else if (color == PlayerColor::Blue) {
+                blue_territory = acc(blue_territory, territory_count);
+            }
+        }
+    }
+    return {red_territory, blue_territory};
+}
+
 std::pair<int, int> Game::total_territory() const {
-    // TODO: implement territory calculation
-    return {0, 0};
+    return territory_helper(*this, [](int acc, int count) { return acc + count; });
 }
 
 std::pair<int, int> Game::max_territory() const {
-    // TODO: implement max territory calculation
-    return {0, 0};
+    return territory_helper(*this, [](int acc, int count) { return std::max(acc, count); });
 }
 
 void Game::apply_move(Move move) {
-    // TODO: implement move application
+    board_ = game_util::ApplyMove(*this, move);
     history_.push_back(move);
+}
+
+void Game::place_piece(Position pos, PlayerColor player, PieceId piece_id) {
+    board_[pos.r][pos.c] = Cell(pos, Piece{player, pos, piece_id});
+    placements_.push_back(board_[pos.r][pos.c]);
 }
 
 std::string Game::encode() const {
     std::string s;
-    for (const auto& move : history_) {
+    for (const auto &cell : placements_) {
+        std::stringstream ss;
+        ss << cell.pos().r << cell.pos().c << static_cast<int>(cell.piece()->owner) << cell.piece()->id;
+        s += ss.str();
+    }
+    s += '_';
+    for (const auto &move : history_) {
         s += move.encode();
     }
     return s;
+}
+
+std::vector<Cell> Game::get_accessible_neighbors(Position pos) const {
+    std::vector<Cell> neighbors;
+    for (auto dir : {Direction::Up, Direction::Down, Direction::Left, Direction::Right}) {
+        Position neighbor_pos = pos.move(dir);
+        if (neighbor_pos.r >= 0 && neighbor_pos.r < 7 && neighbor_pos.c >= 0 && neighbor_pos.c < 7) {
+            if (board_[pos.r][pos.c].wall(dir) == WallType::None) {
+                neighbors.push_back(board_[neighbor_pos.r][neighbor_pos.c]);
+            }
+        }
+    }
+    return neighbors;
+}
+
+std::vector<Piece> Game::get_pieces(PlayerColor player) const {
+    std::vector<Piece> pieces;
+    for (int r = 0; r < 7; ++r) {
+        for (int c = 0; c < 7; ++c) {
+            const Cell &cell = board_[r][c];
+            if (cell.piece() && cell.piece()->owner == player) {
+                pieces.push_back(*cell.piece());
+            }
+        }
+    }
+    std::sort(pieces.begin(), pieces.end(), [](const Piece &a, const Piece &b) { return a.id < b.id; });
+    return pieces;
+}
+
+Piece Game::get_piece(PlayerColor player, PieceId pieceId) const {
+    for (int r = 0; r < 7; ++r) {
+        for (int c = 0; c < 7; ++c) {
+            const Cell &cell = board_[r][c];
+            if (cell.piece()) {
+                const Piece &piece = *cell.piece();
+                if (piece.id == pieceId && piece.owner == player) {
+                    return piece;
+                }
+            }
+        }
+    }
+    throw std::runtime_error("No piece with id exists");
 }
 
 }  // namespace wallgo
