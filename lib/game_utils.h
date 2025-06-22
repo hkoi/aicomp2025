@@ -7,10 +7,10 @@ using namespace wallgo;
 
 namespace game_util {
 
-bool IsMoveLegal(const Board& game, const Move& move);
-std::vector<Move> GetValidMoves(const Board& game, int player);
-Board ApplyMove(const Board& board, const Move& move);
-bool IsGameOver(const Board& board);
+bool IsMoveLegal(const Game& game, const Move& move);
+std::vector<Move> GetValidMoves(const Game& game, PlayerColor player);
+Board ApplyMove(const Game& game, const Move& move);
+bool IsGameOver(const Game& game);
 
 }  // namespace game_util
 #endif
