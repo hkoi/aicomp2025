@@ -49,7 +49,6 @@ GameController::GameController(int seed, std::unique_ptr<Player> player1, std::u
 
 GameOutcome GameController::run() {
     // place the pieces, in order RBBRRBBR
-
     for (int i = 0; i < 8; ++i) {
         std::vector<Position> valid_positions;
 
@@ -65,6 +64,8 @@ GameOutcome GameController::run() {
         Position pos;
         int current_player = (i == 0 || i == 3 || i == 4 || i == 7) ? 1 : 2;
         pos = players_[current_player]->place(valid_positions);
+        double time_used = getTimeSinceLastEvent();
+        addEvent(current_player) << "Took " << time_used << "s to place piece." << std::endl;
         addEvent(current_player) << "Placed piece at (" << pos.r << "," << pos.c << ")" << std::endl;
 
         if (std::find(valid_positions.begin(), valid_positions.end(), pos) == valid_positions.end()) {
@@ -111,7 +112,7 @@ GameOutcome GameController::run() {
         }
         Piece piece = games_[0]->get_piece(move.player(), move.piece_id());
         double time_used = getTimeSinceLastEvent();
-        addEvent(current_player) << "Took " << time_used << "s." << std::endl;
+        addEvent(current_player) << "Took " << time_used << "s to compute move." << std::endl;
         addEvent(current_player) << "Chose piece " << piece.id << " at (" << piece.pos.r << "," << piece.pos.c << ")"
                                  << std::endl;
         addEvent(current_player) << "Number of steps: " << (move.direction1() ? 1 : 0) + (move.direction2() ? 1 : 0)
