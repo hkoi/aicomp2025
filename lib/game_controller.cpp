@@ -71,7 +71,7 @@ GameOutcome GameController::run() {
             std::stringstream message;
             message << "Player " << current_player << " placed piece at an invalid position (" << pos.r << "," << pos.c
                     << ")";
-            return GameOutcome{static_cast<PlayerColor>(3 - current_player), OPPONENT_ILLEGAL_MOVE, games_[0],
+            return GameOutcome{static_cast<PlayerColor>(3 - current_player), OPPONENT_ILLEGAL_MOVE, games_[0]->encode(),
                                message.str()};
         }
 
@@ -106,7 +106,7 @@ GameOutcome GameController::run() {
 
         Move move = players_[current_player]->move(valid_moves);
         if (move.player() != static_cast<PlayerColor>(current_player)) {
-            return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0],
+            return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0]->encode(),
                                "Returned move does not have player set"};
         }
         Piece piece = games_[0]->get_piece(move.player(), move.piece_id());
@@ -128,7 +128,7 @@ GameOutcome GameController::run() {
         if (!game_util::IsMoveLegal(*games_[0], move)) {
             std::stringstream message;
             message << "Illegal move made by " << current_player;
-            return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0], message.str()};
+            return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0]->encode(), message.str()};
         }
         for (int i = 0; i < 3; i++) {
             games_[i]->apply_move(move);
@@ -143,22 +143,23 @@ GameOutcome GameController::run() {
     if (territory1 != territory2) {
         std::stringstream message;
         message << territory1 << "-" << territory2;
-        return GameOutcome{territory1 > territory2 ? PlayerColor::Red : PlayerColor::Blue, BY_TOTAL_AREA, games_[0],
-                           message.str()};
+        return GameOutcome{territory1 > territory2 ? PlayerColor::Red : PlayerColor::Blue, BY_TOTAL_AREA,
+                           games_[0]->encode(), message.str()};
     }
 
     std::tie(territory1, territory2) = games_[0]->max_territory();
     if (territory1 != territory2) {
         std::stringstream message;
         message << territory1 << "-" << territory2;
-        return GameOutcome{territory1 > territory2 ? PlayerColor::Red : PlayerColor::Blue, BY_LARGEST_AREA, games_[0],
-                           message.str()};
+        return GameOutcome{territory1 > territory2 ? PlayerColor::Red : PlayerColor::Blue, BY_LARGEST_AREA,
+                           games_[0]->encode(), message.str()};
     }
 
     if (current_player == 1) {
-        return GameOutcome{PlayerColor::Blue, BY_LAST_PLACEMENT, games_[0], "Player 2 wins by last placement"};
+        return GameOutcome{PlayerColor::Blue, BY_LAST_PLACEMENT, games_[0]->encode(),
+                           "Player 2 wins by last placement"};
     } else {
-        return GameOutcome{PlayerColor::Red, BY_LAST_PLACEMENT, games_[0], "Player 1 wins by last placement"};
+        return GameOutcome{PlayerColor::Red, BY_LAST_PLACEMENT, games_[0]->encode(), "Player 1 wins by last placement"};
     }
 }
 

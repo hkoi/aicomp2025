@@ -28,6 +28,6 @@ int main() {
     std::cout << "Winner: " << static_cast<int>(outcome.winner) << ", Reason: " << static_cast<int>(outcome.reason)
               << ", Message: " << outcome.message << std::endl;
 
-    std::cout << "\n\ngame string:\n" << outcome.game->encode() << std::endl;
+    std::cout << "\n\ngame string:\n" << outcome.encoded_game << std::endl;
     return 0;
 }

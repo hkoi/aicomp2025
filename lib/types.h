@@ -100,7 +100,7 @@ enum Reason { BY_TOTAL_AREA, BY_LARGEST_AREA, BY_LAST_PLACEMENT, OPPONENT_TLE, O
 struct GameOutcome {
     PlayerColor winner;
     Reason reason;
-    std::shared_ptr<Game> game;
+    std::string encoded_game;
     std::string message;
 };
 
