@@ -1,6 +1,6 @@
 #include <random>
 
-#include "lib/types.h"
+#include "types.h"
 
 using namespace wallgo;
 

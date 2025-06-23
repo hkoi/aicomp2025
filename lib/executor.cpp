@@ -1,7 +1,7 @@
 #include <iomanip>
 
-#include "lib/game_controller.h"
-#include "lib/types.h"
+#include "game_controller.h"
+#include "types.h"
 
 namespace red {
 std::unique_ptr<wallgo::Player> get();
