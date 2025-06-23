@@ -71,7 +71,7 @@ using Board = std::array<std::array<Cell, 7>, 7>;
 class Game {
    private:
     Board board_;
-    std::vector<Cell> placements_;
+    std::vector<Piece> placements_;
     std::vector<Move> history_;
 
    public:

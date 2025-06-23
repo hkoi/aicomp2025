@@ -157,15 +157,16 @@ void Game::apply_move(Move move) {
 }
 
 void Game::place_piece(Position pos, PlayerColor player, PieceId piece_id) {
-    board_[pos.r][pos.c] = Cell(pos, Piece{player, pos, piece_id});
-    placements_.push_back(board_[pos.r][pos.c]);
+    Piece piece{player, pos, piece_id};
+    board_[pos.r][pos.c] = Cell(pos, piece);
+    placements_.push_back(piece);
 }
 
 std::string Game::encode() const {
     std::string s;
-    for (const auto &cell : placements_) {
+    for (const auto &piece : placements_) {
         std::stringstream ss;
-        ss << cell.pos().r << cell.pos().c << static_cast<int>(cell.piece()->owner) << cell.piece()->id;
+        ss << piece.pos.r << piece.pos.c << static_cast<int>(piece.owner) << piece.id;
         s += ss.str();
     }
     s += '_';
