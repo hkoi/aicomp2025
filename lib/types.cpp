@@ -97,11 +97,11 @@ Board Game::board() const { return board_; }
 
 std::vector<Move> Game::history() const { return history_; }
 
-inline std::pair<int, int> territory_helper(const Game &game, std::function<int(int, int)> acc) {
+Game::GetTerritoryResult Game::get_territory() const {
     std::array<std::array<bool, 7>, 7> visited = {};
-    const auto &board = game.board();
-    int red_territory = 0;
-    int blue_territory = 0;
+    const auto &board = board_;
+
+    GetTerritoryResult res = {0, 0, 0, 0};
 
     for (int r = 0; r < 7; ++r) {
         for (int c = 0; c < 7; ++c) {
@@ -128,7 +128,7 @@ inline std::pair<int, int> territory_helper(const Game &game, std::function<int(
                     }
                 }
 
-                for (Cell neighbor : game.get_accessible_neighbors(pos)) {
+                for (Cell neighbor : get_accessible_neighbors(pos)) {
                     if (!visited[neighbor.pos().r][neighbor.pos().c]) {
                         visited[neighbor.pos().r][neighbor.pos().c] = true;
                         queue.push(neighbor.pos());
@@ -140,21 +140,15 @@ inline std::pair<int, int> territory_helper(const Game &game, std::function<int(
             if (!single_color) continue;
 
             if (color == PlayerColor::Red) {
-                red_territory = acc(red_territory, territory_count);
+                res.red_total += territory_count;
+                res.red_max = std::max(res.red_max, territory_count);
             } else if (color == PlayerColor::Blue) {
-                blue_territory = acc(blue_territory, territory_count);
+                res.blue_total += territory_count;
+                res.blue_max = std::max(res.blue_max, territory_count);
             }
         }
     }
-    return {red_territory, blue_territory};
-}
-
-std::pair<int, int> Game::total_territory() const {
-    return territory_helper(*this, [](int acc, int count) { return acc + count; });
-}
-
-std::pair<int, int> Game::max_territory() const {
-    return territory_helper(*this, [](int acc, int count) { return std::max(acc, count); });
+    return res;
 }
 
 void Game::apply_move(Move move) {

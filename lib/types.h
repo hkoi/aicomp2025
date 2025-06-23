@@ -78,8 +78,12 @@ class Game {
     Game();
     Board board() const;
     std::vector<Move> history() const;
-    std::pair<int, int> total_territory() const;
-    std::pair<int, int> max_territory() const;
+
+    struct GetTerritoryResult {
+        int red_total, red_max, blue_total, blue_max;
+    };
+    GetTerritoryResult get_territory() const;
+
     void place_piece(Position pos, PlayerColor player, PieceId piece_id);
     void apply_move(Move move);
     std::string encode() const;  // Encode move history as string

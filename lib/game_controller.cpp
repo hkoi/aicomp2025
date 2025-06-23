@@ -139,19 +139,18 @@ GameOutcome GameController::run() {
         }
         addEvent(current_player) << "Game state: " << games_[0]->encode() << std::endl;
     }
-    auto [territory1, territory2] = games_[0]->total_territory();
-    if (territory1 != territory2) {
+    auto res = games_[0]->get_territory();
+    if (res.red_total != res.blue_total) {
         std::stringstream message;
-        message << territory1 << "-" << territory2;
-        return GameOutcome{territory1 > territory2 ? PlayerColor::Red : PlayerColor::Blue, BY_TOTAL_AREA,
+        message << "Total territories: " << res.red_total << "-" << res.blue_total;
+        return GameOutcome{res.red_total > res.blue_total ? PlayerColor::Red : PlayerColor::Blue, BY_TOTAL_AREA,
                            games_[0]->encode(), message.str()};
     }
 
-    std::tie(territory1, territory2) = games_[0]->max_territory();
-    if (territory1 != territory2) {
+    if (res.red_max != res.blue_max) {
         std::stringstream message;
-        message << territory1 << "-" << territory2;
-        return GameOutcome{territory1 > territory2 ? PlayerColor::Red : PlayerColor::Blue, BY_LARGEST_AREA,
+        message << res.red_max << "-" << res.blue_max;
+        return GameOutcome{res.red_max > res.blue_max ? PlayerColor::Red : PlayerColor::Blue, BY_LARGEST_AREA,
                            games_[0]->encode(), message.str()};
     }
 
