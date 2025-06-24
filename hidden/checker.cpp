@@ -1,18 +1,5 @@
-
-#include <algorithm>
-#include <array>
-#include <chrono>
-#include <fstream>
 #include <iostream>
-#include <memory>
-#include <optional>
-#include <queue>
-#include <random>
-#include <sstream>
 #include <string>
-#include <tuple>
-#include <utility>
-#include <vector>
 
 int main() {
     std::string secret;
