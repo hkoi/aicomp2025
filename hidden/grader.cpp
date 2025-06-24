@@ -264,3 +264,10 @@ int main() {
     std::cout << prev_line << std::endl;  // Output the last line of the log
     return 0;
 }
+
+/*
+example output:
+
+A5v29CsgPI0ExImG
+0       0.0237958       0       BY_LARGEST_AREA 22(10)-22(11) 53105220132112110612102260235613_3l0...
+*/
