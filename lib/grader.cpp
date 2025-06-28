@@ -13,7 +13,7 @@ std::unique_ptr<wallgo::Player> get();
 
 int main() {
     // Initialize the game controller with players and seed
-    int seed = 42;
+    int seed = std::chrono::steady_clock::now().time_since_epoch().count() % (int)(1e9 + 7);
     std::unique_ptr<wallgo::Player> player1 = red::get();
     std::unique_ptr<wallgo::Player> player2 = blue::get();
 
