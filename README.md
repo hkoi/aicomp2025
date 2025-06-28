@@ -1,0 +1,15 @@
+# Wall Go
+
+## Instructions
+
+Implement `strategies/impl.cpp`. Then run `sh compile.sh` to compile. After that, the executable is `exec.exe` and run it by `./exec.exe`.
+
+The game state you get (like `24102320542153116412632210231113_2i03o4rm04i41j0ai41o02j43k13j53401243i11644g1p44hm04o59m0a84a81b85100qi43501059m02m4s20p451812851g13g5hk03g44614854l0a654m0484a21464r403o4181`) can be put in the visualiser as a query string, i.e. open up
+
+interesting game states:
+by largest area: 53105220132112110612102260235613_3l0qm41j01o4i612454904242l0qm42313j4ri1ci52g11043i14l51l1244qm0295ai02352g11g54p04o43g0h659603l5qk03g42603842202943g14o52p0i65360
+by last move: 05100620342135112212232202230313_b61435p41p45281a851l0qm44m04o4b81pi4ai02g41g03054g13m54m04m44l04m42g0225300p44bm03l42m12g52g03l4380ao4ho13o53g1sm42402g4300
+
+```
+
+```
