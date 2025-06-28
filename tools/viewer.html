@@ -1,197 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <script
+      type="text/javascript"
+      src="https://ppl-ai-code-interpreter-files.s3.amazonaws.com/IiXIWe_yIKkMhGC_ls_gqQDNrtXYft_bbPIMm8jMh8D8N8Y6lc6RD8RCmFG2ISrzyDFsryn6VbRPvyUc3lkInQ=="
+    ></script>
     <meta charset="UTF-8" />
-    <title>Blokus Duo</title>
-    <style>
-      @font-face {
-        font-family: "Nunito";
-        font-style: normal;
-        font-weight: 200;
-        src: url(https://fonts.gstatic.com/s/nunito/v10/XRXW3I6Li01BKofA-seUYevI.woff2)
-          format("woff2");
-      }
-      @font-face {
-        font-family: "Nunito";
-        font-style: normal;
-        font-weight: 300;
-        src: url(https://fonts.gstatic.com/s/nunito/v10/XRXW3I6Li01BKofAnsSUYevI.woff2)
-          format("woff2");
-      }
-      @font-face {
-        font-family: "Nunito";
-        font-style: normal;
-        font-weight: 700;
-        src: url(https://fonts.gstatic.com/s/nunito/v10/XRXW3I6Li01BKofAjsOUYevI.woff2)
-          format("woff2");
-      }
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: #222;
-        font: 300 14px Nunito;
-      }
-      input {
-        font: 300 14px Nunito;
-      }
-      #board {
-        background: url("https://assets.hkoi.org/training2019/blokus/board.png");
-        width: 600px;
-        height: 600px;
-        position: absolute;
-        left: 20px;
-        top: 20px;
-        overflow: hidden;
-      }
-      #control {
-        position: absolute;
-        top: 20px;
-        left: 644px;
-        color: #aaa;
-      }
-      #game_log {
-        display: flex;
-        width: 620px;
-        margin-top: 10px;
-      }
-      #player1,
-      #player2 {
-        flex: 1;
-      }
-      .player-header {
-        padding: 10px 0 18px 0;
-      }
-      #player1 .player-header {
-        background-color: #517;
-      }
-      #player2 .player-header {
-        background-color: #840;
-      }
-      #player1 .remaining-pieces {
-        background-color: #0e021c;
-      }
-      #player2 .remaining-pieces {
-        background-color: #2c1504;
-      }
-      .remaining-pieces {
-        columns: 3;
-        padding: 0 10px 10px 0;
-      }
-      .remaining-pieces img {
-        width: 60px;
-        height: 60px;
-        vertical-align: middle;
-      }
-      .remaining-pieces span {
-        color: rgba(255, 255, 255, 0.5);
-        display: inline-block;
-        text-align: center;
-        width: 30px;
-        vertical-align: middle;
-      }
-      .remaining-pieces .used {
-        filter: saturate(0.5);
-        opacity: 0.22;
-      }
-      #player1 .remaining-pieces .used {
-        opacity: 0.4;
-      }
-      .score {
-        text-align: center;
-        font-size: 60px;
-        color: #eee;
-      }
-      .name {
-        text-align: center;
-        font-size: 20px;
-        color: #ccc;
-      }
-      input {
-        background-color: #000;
-        border: 1px solid #888;
-        color: #aaa;
-        padding: 2px 4px;
-        border-radius: 6px;
-      }
-      button {
-        background-color: #000;
-        border: 1px solid #888;
-        padding: 4px 12px;
-        color: #aaa;
-        border-radius: 6px;
-      }
-      button:hover {
-        background-color: #246;
-        color: #ccc;
-      }
-      #step_play {
-        margin-left: 40px;
-      }
-      #game_log_scroller {
-        height: 530px;
-        width: 320px;
-        overflow: auto;
-      }
-      #game_log_table {
-        width: 300px;
-        border-collapse: collapse;
-      }
-      #game_log_table tr {
-        height: 60px;
-      }
-      #game_log_table td {
-        border: 1px solid #444;
-      }
-      .piece {
-        position: absolute;
-        width: 200px;
-        height: 200px;
-      }
-      @keyframes place {
-        from {
-          transform: rotate(15deg) translate(30px, -30px);
-          filter: brightness(2);
-        }
-        to {
-          transform: rotate(0) translate(0, -0);
-          filter: brightness(1.7) contrast(0.8) hue-rotate(0);
-        }
-      }
-      .placing {
-        animation-name: place;
-        animation-duration: 500ms;
-      }
-      .latest {
-        filter: brightness(1.7) contrast(0.8) hue-rotate(0);
-      }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wall Go</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div id="board"></div>
-    <div id="control">
-      <div id="stepper">
-        <button id="step_back">&laquo; Back</button>
-        <button id="step_forward">Forward &raquo;</button>
-        <button id="step_play">Play</button>
-      </div>
-      <div id="game_log">
-        <div id="player1">
-          <div class="player-header">
-            <div class="score">0</div>
-            <div class="name">Purple</div>
+    <div class="container">
+      <!-- Game Header with Score Display -->
+      <header class="game-header">
+        <h1 class="game-title">Wall Go</h1>
+        <div class="score-display">
+          <div class="player-score player-red">
+            <div class="player-indicator"></div>
+            <span class="player-name">Red</span>
+            <span class="score">0</span>
           </div>
-          <div class="remaining-pieces"></div>
-        </div>
-        <div id="player2">
-          <div class="player-header">
-            <div class="score">0</div>
-            <div class="name">Orange</div>
+          <div class="player-score player-blue">
+            <div class="player-indicator"></div>
+            <span class="player-name">Blue</span>
+            <span class="score">0</span>
           </div>
-          <div class="remaining-pieces"></div>
         </div>
-      </div>
+      </header>
+
+      <!-- Game Board Container -->
+      <main class="game-board-container">
+        <div class="board-wrapper">
+          <div id="game-board" class="game-board">
+            <!-- Game pieces will be positioned here -->
+          </div>
+        </div>
+      </main>
+
+      <!-- Game Footer with Controls and Status -->
+      <footer class="game-footer">
+        <div class="game-controls">
+          <button id="step_back" class="btn btn--secondary btn--sm">
+            « Back
+          </button>
+          <button id="step_forward" class="btn btn--secondary btn--sm">
+            Forward »
+          </button>
+          <button id="step_play" class="btn btn--primary">Play</button>
+        </div>
+      </footer>
     </div>
+
+    <!-- jQuery for compatibility with existing script -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
     <script>
       (function () {
         // decode the game data
@@ -284,26 +147,38 @@
           return "piece" + player + "-" + pieceId;
         };
 
+        // Initialize 7x7 grid of squares
+        const initializeBoard = () => {
+          const board = $("#game-board");
+          board.empty(); // Clear any existing content
+
+          for (let row = 0; row < 7; row++) {
+            for (let col = 0; col < 7; col++) {
+              const square = $('<div class="board-square"></div>');
+              square.attr("data-row", row);
+              square.attr("data-col", col);
+              square.addClass(`row-${row} col-${col}`);
+              board.append(square);
+            }
+          }
+        };
+
+        // Initialize the board first
+        initializeBoard();
+
         // initialise pieces on the board
         for (let player = 0; player < 2; player++) {
           for (let pieceId = 0; pieceId < 4; pieceId++) {
-            const piece = $('<div class="piece"></div>');
+            const piece = $('<div class="game-piece"></div>');
             piece.attr("id", playerAndPieceIdToHtmlId(player, pieceId));
-            piece.css(
-              "background-image",
-              "url('https://assets.hkoi.org/training2019/blokus/" +
-                (player === 0 ? "1-0.png" : "2-0.png") +
-                "')"
-            );
-            piece.css(
-              "top",
-              20 + positions[player][0][pieceId][0] * 40 - 80 + "px"
-            );
-            piece.css(
-              "left",
-              20 + positions[player][0][pieceId][1] * 40 - 80 + "px"
-            );
-            $("#board").append(piece);
+            piece.addClass(player === 0 ? "piece-red" : "piece-blue");
+            const row = positions[player][0][pieceId][0];
+            const col = positions[player][0][pieceId][1];
+            piece.css({
+              top: 20 + row * 40 + 2 + "px", // +2 for margin-top from CSS
+              left: 20 + col * 40 + 2 + "px", // +2 for margin-left from CSS
+            });
+            $("#game-board").append(piece);
           }
         }
 
@@ -311,15 +186,23 @@
 
         const setPiecePosition = (player, pieceId, position) => {
           const piece = $("#" + playerAndPieceIdToHtmlId(player, pieceId));
-          piece.css("top", 20 + position[0] * 40 - 80 + "px");
-          piece.css("left", 20 + position[1] * 40 - 80 + "px");
+          piece.css({
+            top: 20 + position[0] * 40 + 2 + "px", // +2 for margin-top from CSS
+            left: 20 + position[1] * 40 + 2 + "px", // +2 for margin-left from CSS
+          });
         };
+
+        const walls = [];
 
         const backward = () => {
           if (current == 0) {
             return;
           }
           current--;
+          walls.pop();
+          const [a, b] = calcTerritory();
+          $(".player-red .score").text(a);
+          $(".player-blue .score").text(b);
           const { pieceId, player } = moves[current];
           const piece = $("#" + playerAndPieceIdToHtmlId(player, pieceId));
           setPiecePosition(
@@ -383,41 +266,155 @@
 
           const wall = $('<div class="wall"></div>');
           wall.attr("id", "wall" + current);
+
+          // Position wall at the piece's cell position - CSS will handle the offset based on direction
+          const pieceRow = positions[player][current + 1][pieceId][0];
+          const pieceCol = positions[player][current + 1][pieceId][1];
+
           wall.css({
-            position: "absolute",
-            width: "40px",
-            height: "40px",
-            top: 20 + positions[player][current + 1][pieceId][0] * 40 + "px",
-            left: 20 + positions[player][current + 1][pieceId][1] * 40 + "px",
-            "box-sizing": "border-box",
-            "pointer-events": "none",
-            "z-index": 10,
+            top: 20 + pieceRow * 40 + "px",
+            left: 20 + pieceCol * 40 + "px",
           });
-          const wallColor = player === 0 ? "#F0F" : "#FF0";
-          const borderStyles = {
-            borderTop: "",
-            borderBottom: "",
-            borderLeft: "",
-            borderRight: "",
-          };
+
+          // Add direction and player classes for styling
+          wall.addClass("wall-player-" + player);
           switch (wallPlacementDirection) {
             case 1:
-              borderStyles.borderTop = "8px solid " + wallColor;
+              wall.addClass("wall-top");
               break;
             case 2:
-              borderStyles.borderBottom = "8px solid " + wallColor;
+              wall.addClass("wall-bottom");
               break;
             case 3:
-              borderStyles.borderLeft = "8px solid " + wallColor;
+              wall.addClass("wall-left");
               break;
             case 4:
-              borderStyles.borderRight = "8px solid " + wallColor;
+              wall.addClass("wall-right");
               break;
           }
-          wall.css(borderStyles);
-          $("#board").append(wall);
 
+          $("#game-board").append(wall);
+          walls.push([
+            pieceRow,
+            pieceCol,
+            ...move(pieceRow, pieceCol, wallPlacementDirection),
+          ]);
           current++;
+          const [a, b] = calcTerritory();
+          $(".player-red .score").text(a);
+          $(".player-blue .score").text(b);
+        };
+
+        const calcTerritory = () => {
+          let territory = [0, 0];
+          const visited = Array.from({ length: 7 }, () => Array(7).fill(false));
+          const board = Array.from({ length: 7 }, () => Array(7).fill(null));
+          // Fill the board with the pieces
+          for (let player = 0; player < 2; player++) {
+            for (let pieceId = 0; pieceId < 4; pieceId++) {
+              const piece = $("#" + playerAndPieceIdToHtmlId(player, pieceId));
+              if (piece.length > 0) {
+                const pieceRow = Math.floor(parseInt(piece.css("top")) / 40);
+                const pieceCol = Math.floor(parseInt(piece.css("left")) / 40);
+                board[pieceRow][pieceCol] = player;
+              }
+            }
+          }
+
+          // print board
+          console.log("Board:");
+          for (let i = 0; i < 7; i++) {
+            let row = "";
+            for (let j = 0; j < 7; j++) {
+              if (board[i][j] === null) {
+                row += ". ";
+              } else {
+                row += board[i][j] + " ";
+              }
+            }
+            console.log(row);
+          }
+
+          let cells = [];
+          // DFS to calculate territory
+          const dfs = (i, j, player) => {
+            console.log(`DFS at (${i}, ${j}) for player ${player}`);
+            if (i < 0 || i >= 7 || j < 0 || j >= 7) {
+              return 0; // Out of bounds
+            }
+            cells.push([i, j]);
+
+            const di = [-1, 1, 0, 0];
+            const dj = [0, 0, -1, 1];
+
+            let ans = 1;
+            let ok = 1;
+
+            for (let k = 0; k < 4; k++) {
+              const ni = i + di[k];
+              const nj = j + dj[k];
+
+              if (ni < 0 || ni >= 7 || nj < 0 || nj >= 7) {
+                continue; // Out of bounds
+              }
+
+              if (visited[ni][nj]) {
+                continue; // Already visited
+              }
+
+              if (
+                walls.some(
+                  (w) =>
+                    (w[0] === ni && w[1] === nj && w[2] === i && w[3] === j) ||
+                    (w[0] === i && w[1] === j && w[2] === ni && w[3] === nj)
+                )
+              ) {
+                continue; // Wall in the way
+              }
+
+              visited[ni][nj] = true;
+              if (board[ni][nj] === null || board[ni][nj] === player) {
+                const t = dfs(ni, nj, player); // Same player's piece
+                if (!t) ok = 0;
+                else ans += t;
+              } else {
+                dfs(ni, nj, player);
+                ok = 0;
+              }
+            }
+            if (ok) return ans;
+            else return 0;
+          };
+
+          for (let i = 0; i < 7; i++) {
+            for (let j = 0; j < 7; j++) {
+              // unset shade
+              const square = $(`.row-${i}.col-${j}`);
+              square.removeClass("red-shade blue-shade");
+            }
+          }
+
+          for (let i = 0; i < 7; i++) {
+            for (let j = 0; j < 7; j++) {
+              if (visited[i][j]) continue;
+
+              if (board[i][j] != null) {
+                visited[i][j] = true; // Already occupied by a piece
+                cells = [[i, j]]; // Start a new cell for this piece
+                const t = dfs(i, j, board[i][j]); // Mark all connected pieces
+                if (t) {
+                  territory[board[i][j]] += t; // Add to the player's territory
+                  for (const [ci, cj] of cells) {
+                    const shade =
+                      board[i][j] === 0 ? "red-shade" : "blue-shade";
+                    $(`.row-${ci}.col-${cj}`).addClass(shade);
+                  }
+                }
+              }
+            }
+          }
+
+          return territory;
         };
 
         $("#step_forward").click(() => {
