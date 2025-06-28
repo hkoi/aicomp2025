@@ -23,7 +23,7 @@ double GameController::getTimeSinceLastEvent() const {
 std::ostream& GameController::addEvent(int player) {
     last_time_ = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = last_time_ - start_time_;
-    return output_data_ << player << "\t" << diff.count() << "\t";
+    return output_data_ << "P" << player << "\t" << diff.count() << "s\t";
 }
 
 GameController::GameController(int seed, std::unique_ptr<Player> player1, std::unique_ptr<Player> player2,
@@ -88,22 +88,8 @@ GameOutcome GameController::run() {
     for (; !game_ended; current_player = 3 - current_player) {
         PlayerColor opponent_color = static_cast<PlayerColor>(3 - current_player);
 
-        addEvent(current_player) << "Computing valid moves" << std::endl;
         std::vector<Move>&& valid_moves =
             game_util::GetValidMoves(*games_[0], static_cast<PlayerColor>(current_player));  // note: won't be empty
-        addEvent(current_player) << valid_moves.size() << " valid moves" << std::endl;
-
-        // for (int r = 0; r < 7; ++r) {
-        //     for (int c = 0; c < 7; ++c) {
-        //         const Cell& cell = games_[0]->board()[r][c];
-        //         if (!cell.piece()) {
-        //             std::cout << 'x';
-        //         } else {
-        //             std::cout << static_cast<int>(cell.piece()->owner);
-        //         }
-        //     }
-        //     std::cout << std::endl;
-        // }
 
         Move move = players_[current_player]->move(valid_moves);
         if (move.player() != static_cast<PlayerColor>(current_player)) {
@@ -112,19 +98,12 @@ GameOutcome GameController::run() {
         }
         Piece piece = games_[0]->get_piece(move.player(), move.piece_id());
         double time_used = getTimeSinceLastEvent();
-        addEvent(current_player) << "Took " << time_used << "s to compute move." << std::endl;
-        addEvent(current_player) << "Chose piece " << piece.id << " at (" << piece.pos.r << "," << piece.pos.c << ")"
-                                 << std::endl;
-        addEvent(current_player) << "Number of steps: " << (move.direction1() ? 1 : 0) + (move.direction2() ? 1 : 0)
-                                 << std::endl;
-        if (move.direction1()) {
-            addEvent(current_player) << "Direction 1: " << static_cast<int>(*move.direction1()) << std::endl;
-        }
-        if (move.direction2()) {
-            addEvent(current_player) << "Direction 2: " << static_cast<int>(*move.direction2()) << std::endl;
-        }
-        addEvent(current_player) << "Wall direction: " << static_cast<int>(move.wall_placement_direction())
-                                 << std::endl;
+        addEvent(current_player)
+            << "Chose piece " << piece.id << " at (" << piece.pos.r << "," << piece.pos.c << "), "
+            << "Number of steps: " << (move.direction1() ? 1 : 0) + (move.direction2() ? 1 : 0)
+            << (move.direction1() ? ", Direction 1: " + std::to_string(static_cast<int>(*move.direction1())) : "")
+            << (move.direction2() ? ", Direction 2: " + std::to_string(static_cast<int>(*move.direction2())) : "")
+            << ", Wall direction: " << static_cast<int>(move.wall_placement_direction()) << std::endl;
 
         if (!game_util::IsMoveLegal(*games_[0], move)) {
             std::stringstream message;
@@ -138,7 +117,6 @@ GameOutcome GameController::run() {
             addEvent(current_player) << "Ended the game and made the last move" << std::endl;
             break;
         }
-        addEvent(current_player) << "Game state: " << games_[0]->encode() << std::endl;
     }
     auto res = games_[0]->get_territory();
     if (res.red_total != res.blue_total) {

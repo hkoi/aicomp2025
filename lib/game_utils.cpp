@@ -53,11 +53,6 @@ bool IsMoveLegal(const Game& game, const Move& move) {
         return false;  // Cannot place a wall in a direction that already has a wall
     }
 
-    Position new_pos = pos.move(move.wall_placement_direction());
-    if (new_pos.r < 0 || new_pos.r >= 7 || new_pos.c < 0 || new_pos.c >= 7) {
-        return false;  // Move is out of bounds
-    }
-
     return true;
 }
 

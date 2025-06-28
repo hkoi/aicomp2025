@@ -88,7 +88,9 @@ std::string Move::encode() const {
 Game::Game() : board_(), history_() {
     for (int r = 0; r < 7; ++r) {
         for (int c = 0; c < 7; ++c) {
-            board_[r][c] = Cell({r, c});
+            board_[r][c] = Cell({r, c}, std::nullopt,
+                                {r == 0 ? WallType::Edge : WallType::None, r == 6 ? WallType::Edge : WallType::None,
+                                 c == 0 ? WallType::Edge : WallType::None, c == 6 ? WallType::Edge : WallType::None});
         }
     }
 }
@@ -207,11 +209,8 @@ Piece Game::get_piece(PlayerColor player, PieceId pieceId) const {
     for (int r = 0; r < 7; ++r) {
         for (int c = 0; c < 7; ++c) {
             const Cell &cell = board_[r][c];
-            if (cell.piece()) {
-                const Piece &piece = *cell.piece();
-                if (piece.id == pieceId && piece.owner == player) {
-                    return piece;
-                }
+            if (cell.piece() && cell.piece()->owner == player && cell.piece()->id == pieceId) {
+                return *cell.piece();
             }
         }
     }
