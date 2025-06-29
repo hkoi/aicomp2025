@@ -89,8 +89,8 @@ Game::Game() : board_(), history_() {
     for (int r = 0; r < 7; ++r) {
         for (int c = 0; c < 7; ++c) {
             board_[r][c] = Cell({r, c}, std::nullopt,
-                                {r == 0 ? WallType::Edge : WallType::None, r == 6 ? WallType::Edge : WallType::None,
-                                 c == 0 ? WallType::Edge : WallType::None, c == 6 ? WallType::Edge : WallType::None});
+                                {r == 0 ? WallType::Border : WallType::None, r == 6 ? WallType::Border : WallType::None,
+                                 c == 0 ? WallType::Border : WallType::None, c == 6 ? WallType::Border : WallType::None});
         }
     }
 }
