@@ -66,7 +66,28 @@ class Move {
     std::string encode() const;  // Encode move as string
 };
 
-using Board = std::array<std::array<Cell, 7>, 7>;
+class Board {
+   private:
+    std::array<std::array<Cell, 7>, 7> board_;
+
+   public:
+    Board() = default;
+    Cell get(Position pos) const;
+    void set(Position pos, Cell c);
+    std::vector<Cell> get_accessible_neighbors(Position pos) const;
+    Piece get_piece(PlayerColor player, PieceId piece) const;
+    std::vector<Piece> get_pieces(PlayerColor player) const;
+
+    struct GetTerritoryResult {
+        int red_total, red_max, blue_total, blue_max;
+    };
+    GetTerritoryResult get_territory() const;
+
+    bool is_move_legal(const Move& move) const;
+    std::vector<Move> get_valid_moves(PlayerColor player) const;
+    Board apply_move(const Move& move) const;
+    bool is_game_over() const;
+};
 
 class Game {
    private:
@@ -79,17 +100,9 @@ class Game {
     Board board() const;
     std::vector<Move> history() const;
 
-    struct GetTerritoryResult {
-        int red_total, red_max, blue_total, blue_max;
-    };
-    GetTerritoryResult get_territory() const;
-
     void place_piece(Position pos, PlayerColor player, PieceId piece_id);
     void apply_move(Move move);
     std::string encode() const;  // Encode move history as string
-    std::vector<Cell> get_accessible_neighbors(Position pos) const;
-    std::vector<Piece> get_pieces(PlayerColor player) const;
-    Piece get_piece(PlayerColor player, PieceId piece) const;
 };
 
 class Player {
@@ -109,5 +122,10 @@ struct GameOutcome {
 };
 
 }  // namespace wallgo
+
+namespace std {
+ostream& operator<<(ostream& os, const wallgo::Move& move);
+ostream& operator<<(ostream& os, const wallgo::Board& board);
+}  // namespace std
 
 #endif  // WALLGO_TYPES_H

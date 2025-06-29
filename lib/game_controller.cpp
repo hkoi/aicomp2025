@@ -9,7 +9,6 @@
 #include <tuple>
 #include <vector>
 
-#include "game_utils.h"
 #include "types.h"
 
 namespace wallgo {
@@ -33,6 +32,8 @@ GameController::GameController(int seed, std::unique_ptr<Player> player1, std::u
     games_[1] = std::shared_ptr<Game>(new Game());
     games_[2] = std::shared_ptr<Game>(new Game());
 
+    addEvent(0) << "Initializing Game with seed " << seed << std::endl;
+
     start_time_ = std::chrono::steady_clock::now();
     addEvent(1) << "Initializing Player 1 (Red)" << std::endl;
     player1->init(PlayerColor::Red, games_[1], seed_);
@@ -55,7 +56,7 @@ GameOutcome GameController::run() {
         for (int r = 0; r < 7; ++r) {
             for (int c = 0; c < 7; ++c) {
                 Position pos{r, c};
-                if (!games_[0]->board()[r][c].piece()) {
+                if (!games_[0]->board().get(pos).piece()) {
                     valid_positions.push_back(pos);
                 }
             }
@@ -89,14 +90,14 @@ GameOutcome GameController::run() {
         PlayerColor opponent_color = static_cast<PlayerColor>(3 - current_player);
 
         std::vector<Move>&& valid_moves =
-            game_util::GetValidMoves(*games_[0], static_cast<PlayerColor>(current_player));  // note: won't be empty
+            games_[0]->board().get_valid_moves(static_cast<PlayerColor>(current_player));  // note: won't be empty
 
         Move move = players_[current_player]->move(valid_moves);
         if (move.player() != static_cast<PlayerColor>(current_player)) {
             return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0]->encode(),
                                "Returned move does not have player set"};
         }
-        Piece piece = games_[0]->get_piece(move.player(), move.piece_id());
+        Piece piece = games_[0]->board().get_piece(move.player(), move.piece_id());
         double time_used = getTimeSinceLastEvent();
         addEvent(current_player)
             << "Chose piece " << piece.id << " at (" << piece.pos.r << "," << piece.pos.c << "), "
@@ -105,7 +106,7 @@ GameOutcome GameController::run() {
             << (move.direction2() ? ", Direction 2: " + std::to_string(static_cast<int>(*move.direction2())) : "")
             << ", Wall direction: " << static_cast<int>(move.wall_placement_direction()) << std::endl;
 
-        if (!game_util::IsMoveLegal(*games_[0], move)) {
+        if (!games_[0]->board().is_move_legal(move)) {
             std::stringstream message;
             message << "Illegal move made by " << current_player;
             return GameOutcome{opponent_color, OPPONENT_ILLEGAL_MOVE, games_[0]->encode(), message.str()};
@@ -113,12 +114,12 @@ GameOutcome GameController::run() {
         for (int i = 0; i < 3; i++) {
             games_[i]->apply_move(move);
         }
-        if (game_util::IsGameOver(*games_[0])) {
+        if (games_[0]->board().is_game_over()) {
             addEvent(current_player) << "Ended the game and made the last move" << std::endl;
             break;
         }
     }
-    auto res = games_[0]->get_territory();
+    auto res = games_[0]->board().get_territory();
     if (res.red_total != res.blue_total) {
         std::stringstream message;
         message << "Total territories: " << res.red_total << "-" << res.blue_total;

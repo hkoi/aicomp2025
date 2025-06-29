@@ -5,8 +5,6 @@
 #include <queue>
 #include <sstream>
 
-#include "game_utils.h"
-
 namespace wallgo {
 
 // Position implementation
@@ -84,24 +82,63 @@ std::string Move::encode() const {
     return data;
 }
 
-// Game implementation
-Game::Game() : board_(), history_() {
-    for (int r = 0; r < 7; ++r) {
-        for (int c = 0; c < 7; ++c) {
-            board_[r][c] = Cell({r, c}, std::nullopt,
-                                {r == 0 ? WallType::Edge : WallType::None, r == 6 ? WallType::Edge : WallType::None,
-                                 c == 0 ? WallType::Edge : WallType::None, c == 6 ? WallType::Edge : WallType::None});
-        }
+// Board implementation
+
+Cell Board::get(Position pos) const {
+    if (pos.r < 0 || pos.r >= 7 || pos.c < 0 || pos.c >= 7) {
+        throw std::out_of_range("Position out of bounds");
     }
+    return board_[pos.r][pos.c];
 }
 
-Board Game::board() const { return board_; }
+void Board::set(Position pos, Cell c) {
+    if (pos.r < 0 || pos.r >= 7 || pos.c < 0 || pos.c >= 7) {
+        throw std::out_of_range("Position out of bounds");
+    }
+    board_[pos.r][pos.c] = c;
+}
 
-std::vector<Move> Game::history() const { return history_; }
+std::vector<Cell> Board::get_accessible_neighbors(Position pos) const {
+    std::vector<Cell> neighbors;
+    for (auto dir : {Direction::Up, Direction::Down, Direction::Left, Direction::Right}) {
+        Position neighbor_pos = pos.move(dir);
+        if (neighbor_pos.r >= 0 && neighbor_pos.r < 7 && neighbor_pos.c >= 0 && neighbor_pos.c < 7) {
+            if (get(pos).wall(dir) == WallType::None) {
+                neighbors.push_back(get(neighbor_pos));
+            }
+        }
+    }
+    return neighbors;
+}
 
-Game::GetTerritoryResult Game::get_territory() const {
+Piece Board::get_piece(PlayerColor player, PieceId pieceId) const {
+    for (int r = 0; r < 7; ++r) {
+        for (int c = 0; c < 7; ++c) {
+            const Cell &cell = get({r, c});
+            if (cell.piece() && cell.piece()->owner == player && cell.piece()->id == pieceId) {
+                return *cell.piece();
+            }
+        }
+    }
+    throw std::runtime_error("No piece with id exists");
+}
+
+std::vector<Piece> Board::get_pieces(PlayerColor player) const {
+    std::vector<Piece> pieces;
+    for (int r = 0; r < 7; ++r) {
+        for (int c = 0; c < 7; ++c) {
+            const Cell &cell = get({r, c});
+            if (cell.piece() && cell.piece()->owner == player) {
+                pieces.push_back(*cell.piece());
+            }
+        }
+    }
+    std::sort(pieces.begin(), pieces.end(), [](const Piece &a, const Piece &b) { return a.id < b.id; });
+    return pieces;
+}
+
+Board::GetTerritoryResult Board::get_territory() const {
     std::array<std::array<bool, 7>, 7> visited = {};
-    const auto &board = board_;
 
     GetTerritoryResult res = {0, 0, 0, 0};
 
@@ -109,7 +146,7 @@ Game::GetTerritoryResult Game::get_territory() const {
         for (int c = 0; c < 7; ++c) {
             if (visited[r][c]) continue;
 
-            Cell cell = board[r][c];
+            Cell cell = get({r, c});
             if (!cell.piece()) continue;
 
             std::queue<Position> queue;
@@ -124,8 +161,8 @@ Game::GetTerritoryResult Game::get_territory() const {
                 Position pos = queue.front();
                 queue.pop();
 
-                if (board[pos.r][pos.c].piece()) {
-                    if (board[pos.r][pos.c].piece()->owner != color) {
+                if (get(pos).piece()) {
+                    if (get(pos).piece()->owner != color) {
                         single_color = false;
                     }
                 }
@@ -152,15 +189,181 @@ Game::GetTerritoryResult Game::get_territory() const {
     }
     return res;
 }
+bool Board::is_move_legal(const Move &move) const {
+    Position pos = get_piece(move.player(), move.piece_id()).pos;
+
+    if (pos.r < 0 || pos.r >= 7 || pos.c < 0 || pos.c >= 7) {
+        return false;  // Move is out of bounds
+    }
+
+    if (move.player() != get(pos).piece()->owner) {
+        return false;  // Player does not own the piece at the position
+    }
+
+    if (!get(pos).piece() || get(pos).piece()->id != move.piece_id()) {
+        return false;  // Piece ID does not match the piece at the position
+    }
+
+    if (move.direction2() && !move.direction1()) {
+        return false;  // Cannot have a second direction without a first
+    }
+
+    std::vector<Direction> directions;
+    if (move.direction1()) {
+        directions.push_back(*move.direction1());
+    }
+    if (move.direction2()) {
+        directions.push_back(*move.direction2());
+    }
+
+    for (const auto &dir : directions) {
+        if (get(pos).wall(dir) != WallType::None) {
+            return false;  // Cannot move through a wall
+        }
+
+        Position new_pos = pos.move(dir);
+        if (new_pos.r < 0 || new_pos.r >= 7 || new_pos.c < 0 || new_pos.c >= 7) {
+            return false;  // Move is out of bounds
+        }
+        if (get(new_pos).piece()) {
+            return false;  // Cannot move to a cell that already has a piece
+        }
+
+        pos = new_pos;
+    }
+    if (get(pos).wall(move.wall_placement_direction()) != WallType::None) {
+        return false;  // Cannot place a wall in a direction that already has a wall
+    }
+
+    return true;
+}
+
+std::vector<Move> Board::get_valid_moves(PlayerColor player) const {
+    std::vector<Move> valid_moves;
+    Direction all_directions[] = {Direction::Up, Direction::Down, Direction::Left, Direction::Right};
+
+    for (int r = 0; r < 7; ++r) {
+        for (int c = 0; c < 7; ++c) {
+            const Cell &cell = get({r, c});
+
+            if (!cell.piece() || cell.piece()->owner != player) {
+                continue;
+            }
+            PieceId piece_id = cell.piece()->id;
+
+            for (auto wall_dir : all_directions) {
+                Move move(player, piece_id, std::nullopt, std::nullopt, wall_dir);
+                if (is_move_legal(move)) {
+                    valid_moves.push_back(move);
+                }
+
+                for (auto dir1 : all_directions) {
+                    Move move(player, piece_id, dir1, std::nullopt, wall_dir);
+                    if (is_move_legal(move)) {
+                        valid_moves.push_back(move);
+                    }
+                    for (auto dir2 : all_directions) {
+                        Move move(player, piece_id, dir1, dir2, wall_dir);
+                        if (is_move_legal(move)) {
+                            valid_moves.push_back(move);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return valid_moves;
+}
+
+Board Board::apply_move(const Move &move) const {
+    Board new_board = *this;
+
+    Position pos = get_piece(move.player(), move.piece_id()).pos, new_pos = pos;
+    Piece piece = *new_board.get(pos).piece();
+
+    // Move the piece
+    if (move.direction1()) {
+        new_pos = new_pos.move(*move.direction1());
+    }
+    if (move.direction2()) {
+        new_pos = new_pos.move(*move.direction2());
+    }
+
+    // Update the piece position and walls
+    new_board.set(pos, Cell(pos, std::nullopt, get(pos).walls()));
+
+    auto new_walls = new_board.get(new_pos).walls();
+    new_walls[static_cast<int>(move.wall_placement_direction())] =
+        (piece.owner == PlayerColor::Red) ? WallType::PlayerRed : WallType::PlayerBlue;
+    piece.pos = new_pos;
+    new_board.set(new_pos, Cell(new_pos, piece, new_walls));
+
+    // Update the walls on the opposite cell of destination
+    Position opposite_pos = new_pos.move(move.wall_placement_direction());
+    auto new_opposite_walls = new_board.get(opposite_pos).walls();
+    int opposite_dir = static_cast<int>(move.wall_placement_direction()) ^ 1;
+    new_opposite_walls[opposite_dir] = (piece.owner == PlayerColor::Red) ? WallType::PlayerRed : WallType::PlayerBlue;
+    new_board.set(opposite_pos, Cell(opposite_pos, new_board.get(opposite_pos).piece(), new_opposite_walls));
+
+    return new_board;
+}
+
+bool Board::is_game_over() const {
+    // check if any red pieces can reach blue pieces
+    std::array<std::array<bool, 7>, 7> visited = {};
+
+    for (auto piece : get_pieces(PlayerColor::Red)) {
+        Position pos = piece.pos;
+
+        // use BFS to check if any red piece can reach a blue piece
+        std::queue<Position> queue;
+        queue.push(pos);
+        visited[pos.r][pos.c] = true;
+        while (!queue.empty()) {
+            Position current = queue.front();
+            queue.pop();
+
+            for (Cell neighbor : get_accessible_neighbors(current)) {
+                if (visited[neighbor.pos().r][neighbor.pos().c]) continue;
+                visited[neighbor.pos().r][neighbor.pos().c] = true;
+
+                if (neighbor.piece() && neighbor.piece()->owner == PlayerColor::Blue) {
+                    return false;  // Red can reach Blue
+                }
+
+                queue.push(neighbor.pos());
+            }
+        }
+    }
+
+    return true;
+}
+
+// Game implementation
+Game::Game() : board_(), history_() {
+    for (int r = 0; r < 7; ++r) {
+        for (int c = 0; c < 7; ++c) {
+            board_.set({r, c},
+                       Cell({r, c}, std::nullopt,
+                            {r == 0 ? WallType::Edge : WallType::None, r == 6 ? WallType::Edge : WallType::None,
+                             c == 0 ? WallType::Edge : WallType::None, c == 6 ? WallType::Edge : WallType::None}));
+        }
+    }
+}
+
+Board Game::board() const { return board_; }
+
+std::vector<Move> Game::history() const { return history_; }
 
 void Game::apply_move(Move move) {
-    board_ = game_util::ApplyMove(*this, move);
+    board_ = board_.apply_move(move);
     history_.push_back(move);
 }
 
 void Game::place_piece(Position pos, PlayerColor player, PieceId piece_id) {
     Piece piece{player, pos, piece_id};
-    board_[pos.r][pos.c] = Cell(pos, piece);
+    board_.set(pos, Cell(pos, piece, board_.get(pos).walls()));
     placements_.push_back(piece);
 }
 
@@ -178,43 +381,62 @@ std::string Game::encode() const {
     return s;
 }
 
-std::vector<Cell> Game::get_accessible_neighbors(Position pos) const {
-    std::vector<Cell> neighbors;
-    for (auto dir : {Direction::Up, Direction::Down, Direction::Left, Direction::Right}) {
-        Position neighbor_pos = pos.move(dir);
-        if (neighbor_pos.r >= 0 && neighbor_pos.r < 7 && neighbor_pos.c >= 0 && neighbor_pos.c < 7) {
-            if (board_[pos.r][pos.c].wall(dir) == WallType::None) {
-                neighbors.push_back(board_[neighbor_pos.r][neighbor_pos.c]);
-            }
-        }
-    }
-    return neighbors;
-}
-
-std::vector<Piece> Game::get_pieces(PlayerColor player) const {
-    std::vector<Piece> pieces;
-    for (int r = 0; r < 7; ++r) {
-        for (int c = 0; c < 7; ++c) {
-            const Cell &cell = board_[r][c];
-            if (cell.piece() && cell.piece()->owner == player) {
-                pieces.push_back(*cell.piece());
-            }
-        }
-    }
-    std::sort(pieces.begin(), pieces.end(), [](const Piece &a, const Piece &b) { return a.id < b.id; });
-    return pieces;
-}
-
-Piece Game::get_piece(PlayerColor player, PieceId pieceId) const {
-    for (int r = 0; r < 7; ++r) {
-        for (int c = 0; c < 7; ++c) {
-            const Cell &cell = board_[r][c];
-            if (cell.piece() && cell.piece()->owner == player && cell.piece()->id == pieceId) {
-                return *cell.piece();
-            }
-        }
-    }
-    throw std::runtime_error("No piece with id exists");
-}
-
 }  // namespace wallgo
+
+namespace std {
+
+ostream &operator<<(ostream &os, const wallgo::Move &move) {
+    os << "Move(player=" << static_cast<int>(move.player()) << ", piece_id=" << move.piece_id()
+       << ", direction1=" << (move.direction1() ? std::to_string(static_cast<int>(*move.direction1())) : "None")
+       << ", direction2=" << (move.direction2() ? std::to_string(static_cast<int>(*move.direction2())) : "None")
+       << ", wall_placement_direction=" << static_cast<int>(move.wall_placement_direction()) << ")";
+    return os;
+}
+ostream &operator<<(ostream &os, const wallgo::Board &board) {
+    using namespace wallgo;
+    for (int r = 0; r < 7; ++r) {
+        for (int c = 0; c < 7; ++c) {
+            const Cell &cell = board.get({r, c});
+            os << '+';
+            if (cell.wall(Direction::Up) != WallType::None) {
+                os << "---";
+            } else {
+                os << "   ";
+            }
+        }
+        os << "+\n";
+        for (int c = 0; c < 7; ++c) {
+            const Cell &cell = board.get({r, c});
+            if (cell.wall(Direction::Left) != WallType::None) {
+                os << '|';
+            } else {
+                os << ' ';
+            }
+            os << ' ';
+            if (cell.piece()) {
+                if (cell.piece()->owner == PlayerColor::Red) {
+                    os << (char)('A' + cell.piece()->id);
+                } else {
+                    os << (char)('a' + cell.piece()->id);
+                }
+            } else {
+                os << '.';
+            }
+            os << ' ';
+        }
+        cout << "|\n";
+    }
+    for (int c = 0; c < 7; ++c) {
+        const Cell &cell = board.get({6, c});
+        os << '+';
+        if (cell.wall(Direction::Down) != WallType::None) {
+            os << "---";
+        } else {
+            os << "   ";
+        }
+    }
+    os << "+\n";
+    return os;
+}
+
+}  // namespace std
