@@ -91,7 +91,8 @@ Cell Board::get(Position pos) const {
     return board_[pos.r][pos.c];
 }
 
-void Board::set(Position pos, Cell c) {
+void Board::set(Cell c) {
+    Position pos = c.pos();
     if (pos.r < 0 || pos.r >= 7 || pos.c < 0 || pos.c >= 7) {
         throw std::out_of_range("Position out of bounds");
     }
@@ -291,20 +292,20 @@ Board Board::apply_move(const Move &move) const {
     }
 
     // Update the piece position and walls
-    new_board.set(pos, Cell(pos, std::nullopt, get(pos).walls()));
+    new_board.set(Cell(pos, std::nullopt, get(pos).walls()));
 
     auto new_walls = new_board.get(new_pos).walls();
     new_walls[static_cast<int>(move.wall_placement_direction())] =
         (piece.owner == PlayerColor::Red) ? WallType::PlayerRed : WallType::PlayerBlue;
     piece.pos = new_pos;
-    new_board.set(new_pos, Cell(new_pos, piece, new_walls));
+    new_board.set(Cell(new_pos, piece, new_walls));
 
     // Update the walls on the opposite cell of destination
     Position opposite_pos = new_pos.move(move.wall_placement_direction());
     auto new_opposite_walls = new_board.get(opposite_pos).walls();
     int opposite_dir = static_cast<int>(move.wall_placement_direction()) ^ 1;
     new_opposite_walls[opposite_dir] = (piece.owner == PlayerColor::Red) ? WallType::PlayerRed : WallType::PlayerBlue;
-    new_board.set(opposite_pos, Cell(opposite_pos, new_board.get(opposite_pos).piece(), new_opposite_walls));
+    new_board.set(Cell(opposite_pos, new_board.get(opposite_pos).piece(), new_opposite_walls));
 
     return new_board;
 }
@@ -344,8 +345,7 @@ bool Board::is_game_over() const {
 Game::Game() : board_(), history_() {
     for (int r = 0; r < 7; ++r) {
         for (int c = 0; c < 7; ++c) {
-            board_.set({r, c},
-                       Cell({r, c}, std::nullopt,
+            board_.set(Cell({r, c}, std::nullopt,
                             {r == 0 ? WallType::Border : WallType::None, r == 6 ? WallType::Border : WallType::None,
                              c == 0 ? WallType::Border : WallType::None, c == 6 ? WallType::Border : WallType::None}));
         }
@@ -363,7 +363,7 @@ void Game::apply_move(Move move) {
 
 void Game::place_piece(Position pos, PlayerColor player, PieceId piece_id) {
     Piece piece{player, pos, piece_id};
-    board_.set(pos, Cell(pos, piece, board_.get(pos).walls()));
+    board_.set(Cell(pos, piece, board_.get(pos).walls()));
     placements_.push_back(piece);
 }
 

@@ -73,7 +73,7 @@ class Board {
    public:
     Board() = default;
     Cell get(Position pos) const;
-    void set(Position pos, Cell c);
+    void set(Cell c); // Replace cell at c.pos() with c
     std::vector<Cell> get_accessible_neighbors(Position pos) const;
     Piece get_piece(PlayerColor player, PieceId piece) const;
     std::vector<Piece> get_pieces(PlayerColor player) const;
