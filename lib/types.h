@@ -17,7 +17,7 @@ enum class PlayerColor { Red = 1, Blue = 2 };
 
 enum class Direction { Up = 0, Down = 1, Left = 2, Right = 3 };
 
-enum class WallType { None, PlayerRed, PlayerBlue, Edge };
+enum class WallType { None = 0, PlayerRed = 1, PlayerBlue = 2, Border = 3 };
 
 struct Position {
     int r;
