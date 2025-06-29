@@ -278,6 +278,10 @@ std::vector<Move> Board::get_valid_moves(PlayerColor player) const {
 }
 
 Board Board::apply_move(const Move &move) const {
+    if (!is_move_legal(move)) {
+        throw std::runtime_error("Illegal move");
+    }
+
     Board new_board = *this;
 
     Position pos = get_piece(move.player(), move.piece_id()).pos, new_pos = pos;
