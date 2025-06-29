@@ -12,7 +12,7 @@ class PlayerImpl : public Player {
    public:
     void init(PlayerColor player, std::shared_ptr<const Game> game, int seed) override {}
 
-    Position place(const std::vector<Position>& valid_positions) override {}
+    Position place(PieceId pieceId, const std::vector<Position>& valid_positions) override {}
 
     Move move(const std::vector<Move>& valid_moves) override {}
 };

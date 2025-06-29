@@ -12,7 +12,7 @@ class RandomImpl : public Player {
    public:
     void init(PlayerColor player, std::shared_ptr<const Game> game, int seed) override { rng_ = std::mt19937(seed); }
 
-    Position place(const std::vector<Position>& valid_positions) override {
+    Position place(PieceId pieceId, const std::vector<Position>& valid_positions) override {
         std::uniform_int_distribution<int> dist(0, (int)valid_positions.size() - 1);
         return valid_positions[dist(rng_)];
     }

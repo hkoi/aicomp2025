@@ -168,9 +168,9 @@ class Player {
     // use.
     virtual void init(PlayerColor player, std::shared_ptr<const Game> game, int seed) = 0;
 
-    // Implement this method to place a piece at one of the valid positions. You should choose a position from the
+    // Implement this method to place the piece at one of the valid positions. You should choose a position from the
     // provided list. Return the position where you want to place the piece.
-    virtual Position place(const std::vector<Position>& valid_positions) = 0;
+    virtual Position place(PieceId pieceId, const std::vector<Position>& valid_positions) = 0;
 
     // Implement this method to make a move. You should choose a move from the provided list of valid moves.
     // Return the move you want to make.

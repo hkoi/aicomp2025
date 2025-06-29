@@ -64,7 +64,8 @@ GameOutcome GameController::run() {
 
         Position pos;
         int current_player = (i == 0 || i == 3 || i == 4 || i == 7) ? 1 : 2;
-        pos = players_[current_player]->place(valid_positions);
+        int current_piece_id = i / 2;
+        pos = players_[current_player]->place(current_piece_id, valid_positions);
         double time_used = getTimeSinceLastEvent();
         addEvent(current_player) << "Took " << time_used << "s to place piece." << std::endl;
         addEvent(current_player) << "Placed piece at (" << pos.r << "," << pos.c << ")" << std::endl;
@@ -79,7 +80,7 @@ GameOutcome GameController::run() {
 
         for (int game = 0; game < 3; ++game) {
             // id is i/2
-            games_[game]->place_piece(pos, static_cast<PlayerColor>(current_player), i / 2);
+            games_[game]->place_piece(pos, static_cast<PlayerColor>(current_player), current_piece_id);
         }
     }
 
