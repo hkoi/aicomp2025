@@ -1,6 +1,10 @@
 #include <random>
 
-#include "types.h"
+#ifdef ONLINE_JUDGE
+#include "aicomp.h"
+#else
+#include "../lib/types.h"
+#endif
 
 using namespace wallgo;
 
