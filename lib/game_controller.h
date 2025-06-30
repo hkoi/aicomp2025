@@ -15,6 +15,7 @@ class GameController {
    private:
     std::vector<std::unique_ptr<Player>> players_;
     std::vector<std::shared_ptr<Game>> games_;
+    std::vector<double> playersRemainingTime_;
     std::ostream& output_data_;
     int seed_;
     std::chrono::time_point<std::chrono::steady_clock> start_time_;
@@ -22,6 +23,7 @@ class GameController {
     std::chrono::steady_clock steady_clock_;
 
     double getTimeSinceLastEvent() const;
+    bool subtractTimeAndCheckTimeLimit(int player, double time);
     std::ostream& addEvent(int player);
 
    public:

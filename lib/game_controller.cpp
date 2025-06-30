@@ -19,6 +19,15 @@ double GameController::getTimeSinceLastEvent() const {
     return diff.count();
 }
 
+bool GameController::subtractTimeAndCheckTimeLimit(int player, double time) {
+    playersRemainingTime_[player] -= time;
+    if (playersRemainingTime_[player] < 0) {
+        addEvent(player) << "Ran out of time!" << std::endl;
+        return true;
+    }
+    return false;
+}
+
 std::ostream& GameController::addEvent(int player) {
     last_time_ = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = last_time_ - start_time_;
@@ -27,7 +36,7 @@ std::ostream& GameController::addEvent(int player) {
 
 GameController::GameController(int seed, std::unique_ptr<Player> player1, std::unique_ptr<Player> player2,
                                std::ostream& output_data)
-    : seed_(seed), output_data_(output_data), players_(3), games_(3) {
+    : seed_(seed), output_data_(output_data), players_(3), games_(3), playersRemainingTime_(3, 1) {
     games_[0] = std::shared_ptr<Game>(new Game());
     games_[1] = std::shared_ptr<Game>(new Game());
     games_[2] = std::shared_ptr<Game>(new Game());
@@ -38,12 +47,22 @@ GameController::GameController(int seed, std::unique_ptr<Player> player1, std::u
     addEvent(1) << "Initializing Player 1 (Red)" << std::endl;
     player1->init(PlayerColor::Red, games_[1], seed_);
     double player1_initialize_time = getTimeSinceLastEvent();
+    if (subtractTimeAndCheckTimeLimit(1, player1_initialize_time)) {
+        std::stringstream message;
+        message << "Player 1 ran out of time while initializing";
+        throw std::runtime_error(message.str());
+    }
     addEvent(1) << "Initializing Player 1 completed in " << player1_initialize_time << "s" << std::endl;
     player1.swap(players_[1]);
 
     addEvent(2) << "Initializing Player 2 (Blue)" << std::endl;
     player2->init(PlayerColor::Blue, games_[2], seed_);
     double player2_initialize_time = getTimeSinceLastEvent();
+    if (subtractTimeAndCheckTimeLimit(2, player2_initialize_time)) {
+        std::stringstream message;
+        message << "Player 2 ran out of time while initializing";
+        throw std::runtime_error(message.str());
+    }
     addEvent(2) << "Initializing Player 2 completed in " << player2_initialize_time << "s" << std::endl;
     player2.swap(players_[2]);
 }
@@ -67,6 +86,12 @@ GameOutcome GameController::run() {
         int current_piece_id = i / 2;
         pos = players_[current_player]->place(current_piece_id, valid_positions);
         double time_used = getTimeSinceLastEvent();
+        if (subtractTimeAndCheckTimeLimit(current_player, time_used - 0.1)) {
+            std::stringstream message;
+            message << "Player " << current_player << " ran out of time while placing piece";
+            return GameOutcome{static_cast<PlayerColor>(3 - current_player), OPPONENT_TLE, games_[0]->encode(),
+                               message.str()};
+        }
         addEvent(current_player) << "Took " << time_used << "s to place piece." << std::endl;
         addEvent(current_player) << "Placed piece at (" << pos.r << "," << pos.c << ")" << std::endl;
 
@@ -100,6 +125,11 @@ GameOutcome GameController::run() {
         }
         Piece piece = games_[0]->board().get_piece(move.player(), move.piece_id());
         double time_used = getTimeSinceLastEvent();
+        if (subtractTimeAndCheckTimeLimit(current_player, time_used - 0.1)) {
+            std::stringstream message;
+            message << "Player " << current_player << " ran out of time while making a move";
+            return GameOutcome{opponent_color, OPPONENT_TLE, games_[0]->encode(), message.str()};
+        }
         addEvent(current_player)
             << "Chose piece " << piece.id << " at (" << piece.pos.r << "," << piece.pos.c << "), "
             << "Number of steps: " << (move.direction1() ? 1 : 0) + (move.direction2() ? 1 : 0)
